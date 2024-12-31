@@ -1,63 +1,45 @@
-# Author: Jigarvarma2005
-
+import asyncio
 from motor import motor_asyncio
 
 class MongoDB:
     def __init__(self, url: str):
         self.client = motor_asyncio.AsyncIOMotorClient(url)
-        self.db = self.client.giveawaybot
-        self.mygiveaways = self.db.mygiveaways
+        self.db = self.client.giveawaybot  # The database "giveawaybot"
+        self.mygiveaways = self.db.mygiveaways  # The collection "mygiveaways"
     
-    async def get_giveawayid(self, userid: int):
-        user = await self.mygiveaways.find_one({"_id": userid})
-        return self.db[str(userid)] if user != None else None
-    
+    # Create or get a user's database collection (userId)
     async def add_giveawayid(self, userid: int):
+        # Check if the user already has a collection
         if not (await self.mygiveaways.find_one({"_id": userid})):
-            await self.mygiveaways.insert_one({"_id": userid})
-            return self.db[str(userid)]
+            await self.mygiveaways.insert_one({"_id": userid})  # Create an entry for the user
+            return self.db[str(userid)]  # Dynamically create a collection for the user
         else:
             return None
     
-    async def delete_giveawayid(self, userid: int):
-        user = await self.mygiveaways.find_one({"_id": userid})
-        if user != None:
-            await self.mygiveaways.delete_one(user)
-            userDb = self.db[str(userid)]
-            await userDb.drop()
-            return True
-        else:
-            return None
-    
-    async def get_giveaway_users(self, userid: int):
-        userDb = await self.get_giveawayid(userid)
-        if userDb is None:
-            return None
-        giveaway = userDb.find({})
-        if giveaway is None:
-            return None
-        count = await userDb.count_documents({})
-        return await giveaway.to_list(count)
-    
+    # Add giveaway information to a user's collection
     async def add_giveaway(self, userid: int, winners: int, msg_text: str, giveaway_text: str):
         userDb = await self.add_giveawayid(userid)
-        if userDb != None:
-            await userDb.insert_one({"_id": "data", "winners": winners, "msg_text": msg_text, "giveaway_text": giveaway_text})
+        if userDb:
+            # Insert giveaway data for the user
+            await userDb.insert_one({
+                "_id": "data", "winners": winners, "msg_text": msg_text, "giveaway_text": giveaway_text
+            })
             return True
+        return False
+
+# Main function to execute
+async def main():
+    try:
+        # Replace with your MongoDB Atlas connection string
+        db = MongoDB('mongodb+srv://<username>:<password>@cluster0.mongodb.net/giveawaybot?retryWrites=true&w=majority')
+        # Add giveaway data for a user (userId=12345, winners=3, and sample messages)
+        result = await db.add_giveaway(12345, 3, "Win a prize!", "React with ❤️ to participate!")
+        if result:
+            print("Giveaway data added successfully!")
         else:
-            return None
-    
-    async def get_giveaway_users_count(self, userid: int):
-        userDb = await self.get_giveawayid(userid)
-        if userDb != None:
-            return giveaway if (giveaway := await userDb.count_documents({})) else None
-        else:
-            return None
-    
-    async def add_giveaway_user(self, giveawayId: int, userId: int):
-        userDb = await self.get_giveawayid(giveawayId)
-        if userDb != None:
-            if (await userDb.find_one({"_id": userId})):
-                return None
-            await userDb.insert_one({"_id": userId})
-            return userDb
+            print("Error adding giveaway data.")
+    except Exception as e:
+        print(f"Error: {e}")
+
+# Run the asynchronous main function
+asyncio.run(main())
