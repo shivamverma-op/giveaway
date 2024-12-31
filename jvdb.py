@@ -31,7 +31,7 @@ class MongoDB:
 async def main():
     try:
         # Replace with your MongoDB Atlas connection string
-        db = MongoDB('mongodb+srv://<username>:<password>@cluster0.mongodb.net/giveawaybot?retryWrites=true&w=majority')
+        db = MongoDB('mongodb+srv://kalawativerma80:CUhwW7zAu2RA900S@cluster0.vxnio.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
         # Add giveaway data for a user (userId=12345, winners=3, and sample messages)
         result = await db.add_giveaway(12345, 3, "Win a prize!", "React with ❤️ to participate!")
         if result:
